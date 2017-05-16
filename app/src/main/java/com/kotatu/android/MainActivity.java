@@ -1,8 +1,5 @@
 package com.kotatu.android;
 
-// WebRTC Data Channel Sample Program
-// Programed by Kazuyuki Eguchi
-
 import android.app.Activity;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
