@@ -1,4 +1,4 @@
-package com.kotatu.android.chat;
+package com.kotatu.android.chat.observer;
 
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;

@@ -1,4 +1,4 @@
-package com.kotatu.android;
+package com.kotatu.android.activity;
 
 import android.app.Activity;
 import android.opengl.GLSurfaceView;
@@ -8,7 +8,8 @@ import android.widget.Button;
 
 import com.github.nkzawa.socketio.client.IO;
 import com.github.nkzawa.socketio.client.Socket;
-import com.kotatu.android.chat.DefaultObserver;
+import com.kotatu.android.R;
+import com.kotatu.android.chat.observer.DefaultObserver;
 import com.kotatu.android.chat.ConnectionManager;
 
 import org.webrtc.PeerConnection;
@@ -17,13 +18,11 @@ import org.webrtc.VideoRenderer;
 import org.webrtc.VideoRendererGui;
 
 import java.net.URISyntaxException;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 
-public class MainActivity extends Activity {
+public class ChatActivity extends Activity {
 
     private final String TAG = "sample";
     private final String STRN = "stun:stun.l.google.com:19302";
@@ -58,7 +57,7 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
         initPeerConnectionFactory();
         this.renderer = createVideoRenderer();
-        final PeerConnection.Observer observer = new DefaultObserver(socket, renderer);
+        final PeerConnection.Observer observer = new DefaultObserver(socket);
     }
 
     @Override
@@ -76,7 +75,7 @@ public class MainActivity extends Activity {
     }
 
     private synchronized void enter(){
-        final ConnectionManager connectionManager = new ConnectionManager(factory, new DefaultObserver(socket, renderer), socket, currentRoomId);
+        final ConnectionManager connectionManager = new ConnectionManager(factory, new DefaultObserver(socket), socket, currentRoomId);
         this.connectionManager = connectionManager;
         final Button button = (Button) findViewById(R.id.button);
         connectionManager.connect(getIceServers(), new ConnectionManager.Callback() {

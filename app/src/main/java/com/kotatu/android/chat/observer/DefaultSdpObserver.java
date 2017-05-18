@@ -1,13 +1,14 @@
-package com.kotatu.android.chat;
+package com.kotatu.android.chat.observer;
 
 import android.util.Log;
 
 import com.github.nkzawa.socketio.client.Socket;
+import com.kotatu.android.chat.DefaultMediaConstraints;
+import com.kotatu.android.chat.SocketMessageKey;
 import com.kotatu.android.chat.message.Message;
 import com.kotatu.android.chat.message.SdpMessage;
 import com.kotatu.android.util.JsonSerializer;
 
-import org.webrtc.MediaConstraints;
 import org.webrtc.PeerConnection;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
@@ -16,7 +17,8 @@ import org.webrtc.SessionDescription;
  * Created by mayuhei on 2017/05/15.
  */
 
-public class DefaultSdpObserver implements SdpObserver {
+public class
+DefaultSdpObserver implements SdpObserver {
     private final String TAG = this.getClass().getCanonicalName();
 
     private PeerConnection connection;

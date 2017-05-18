@@ -8,13 +8,15 @@ import com.kotatu.android.chat.message.CallMe;
 import com.kotatu.android.chat.message.IceCandidateMessage;
 import com.kotatu.android.chat.message.Message;
 import com.kotatu.android.chat.message.SdpMessage;
+import com.kotatu.android.chat.media.AudioMediaStreamFactory;
+import com.kotatu.android.chat.media.MediaStreamFactory;
+import com.kotatu.android.chat.observer.DefaultSdpObserver;
+import com.kotatu.android.chat.observer.DoNothingSdpObserver;
 import com.kotatu.android.util.JsonSerializer;
 
-import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
-import org.webrtc.SdpObserver;
 
 import java.util.HashMap;
 import java.util.List;
@@ -109,7 +111,7 @@ public class ConnectionManager {
         if(connection == null) {
             connection = factory.createPeerConnection(iceServers, new MediaConstraints(), observer);
             socketIdToPeerConnection.put(from, connection);
-            MediaStreamFactory streamFactory = new VideoAudioMediaStreamFactory(factory, null);
+            MediaStreamFactory streamFactory = new AudioMediaStreamFactory(factory);
             connection.addStream(streamFactory.create());
         }
         return connection;

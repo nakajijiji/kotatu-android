@@ -1,4 +1,4 @@
-package com.kotatu.android.chat;
+package com.kotatu.android.chat.media;
 
 import org.webrtc.MediaStream;
 import org.webrtc.PeerConnectionFactory;

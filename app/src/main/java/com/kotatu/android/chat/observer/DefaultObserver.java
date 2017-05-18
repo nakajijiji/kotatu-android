@@ -1,10 +1,11 @@
-package com.kotatu.android.chat;
+package com.kotatu.android.chat.observer;
 
 import android.util.Log;
 
 import com.github.nkzawa.socketio.client.Socket;
+import com.kotatu.android.chat.DefaultDataChannelObserver;
+import com.kotatu.android.chat.SocketMessageKey;
 import com.kotatu.android.chat.message.IceCandidateMessage;
-import com.kotatu.android.chat.message.Message;
 import com.kotatu.android.util.JsonSerializer;
 
 import org.webrtc.AudioTrack;
@@ -12,8 +13,6 @@ import org.webrtc.DataChannel;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaStream;
 import org.webrtc.PeerConnection;
-import org.webrtc.VideoRenderer;
-import org.webrtc.VideoTrack;
 
 import java.util.List;
 
@@ -25,12 +24,10 @@ public class DefaultObserver implements PeerConnection.Observer {
     private static final String TAG = DefaultObserver.class.getCanonicalName();
 
     private Socket socket;
-    private VideoRenderer renderer;
     private MediaStream mediaStream;
 
-    public DefaultObserver(Socket socket, VideoRenderer renderer) {
+    public DefaultObserver(Socket socket) {
         this.socket = socket;
-        this.renderer = renderer;
     }
 
     @Override
@@ -62,11 +59,7 @@ public class DefaultObserver implements PeerConnection.Observer {
 
     @Override
     public void onAddStream(MediaStream mediaStream) {
-        List<VideoTrack> videoTracks = mediaStream.videoTracks;
-       // videoTracks.get(0).addRenderer(renderer);
         List<AudioTrack> audioTracks = mediaStream.audioTracks;
-        Log.d(DefaultObserver.class.getName(), "videoTracks size:" + videoTracks.size());
-        Log.d(DefaultObserver.class.getName(), "audioTracks size:" + audioTracks.size());
     }
 
     @Override
