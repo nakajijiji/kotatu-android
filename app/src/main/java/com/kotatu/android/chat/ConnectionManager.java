@@ -4,99 +4,118 @@ import android.util.Log;
 
 import com.github.nkzawa.emitter.Emitter;
 import com.github.nkzawa.socketio.client.Socket;
+import com.kotatu.android.chat.message.CallMe;
+import com.kotatu.android.chat.message.IceCandidateMessage;
+import com.kotatu.android.chat.message.Message;
+import com.kotatu.android.chat.message.SdpMessage;
 import com.kotatu.android.util.JsonSerializer;
 
+import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.SdpObserver;
-import org.webrtc.SessionDescription;
 
-import java.util.LinkedList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by mayuhei on 2017/05/17.
  */
 
 public class ConnectionManager {
+    public static String TAG = ConnectionManager.class.getCanonicalName();
+
     private PeerConnectionFactory factory;
-    private PeerConnection connection;
+    private Map<String, PeerConnection> socketIdToPeerConnection = new HashMap<>();
     private PeerConnection.Observer observer;
     private Socket socket;
-    private SdpObserver sdpObserver;
+    private String roomId;
 
-    public ConnectionManager(PeerConnectionFactory factory, PeerConnection.Observer observer, Socket socket){
+    public ConnectionManager(PeerConnectionFactory factory, PeerConnection.Observer observer, Socket socket, String roomId) {
         this.factory = factory;
         this.socket = socket;
         this.observer = observer;
+        this.roomId = roomId;
     }
 
-    public void reconnect(List<PeerConnection.IceServer> iceServers, String roomId){
-        this.connection = factory.createPeerConnection(iceServers, new MediaConstraints(), observer);
-        this.sdpObserver = new DefaultSdpObserver(connection, socket);
-        socket.connect();
-        socket.emit(SocketMessageKey.JOIN.toString(), roomId);
-        socket.on(SocketMessageKey.SEND_SDP.toString(), new Emitter.Listener() {
+    public void connect(final List<PeerConnection.IceServer> iceServers, Callback callback) {
+        connectIfDisconnected(roomId);
+        socket.on(SocketMessageKey.MESSAGE.toString(), new Emitter.Listener() {
             @Override
             public void call(Object... args) {
-                Log.d(this.getClass().getName(), "RECIEVE SDP");
-                if (args.length != 1) {
-                    throw new IllegalStateException();
+                if(args.length != 1){
+                    Log.d(TAG, "illegal message");
+                    return;
                 }
-                SdpMessage sdpMessage = JsonSerializer.deserialize(args[0].toString(), SdpMessage.class);
-                connection.setRemoteDescription(sdpObserver, sdpMessage.getSessionDescription());
-                if(sdpMessage.getSessionDescription().type == SessionDescription.Type.OFFER) {
-                    answer();
+                String messageString = args[0].toString();
+                Message message = JsonSerializer.deserialize(messageString, Message.class);
+                if(!message.getRoomId().equals(roomId)){
+                    return;
+                }
+                PeerConnection connection = createPeerConnectionIfNotExists(iceServers, message.getFrom());
+                switch (message.getType()) {
+                    case CALLME:
+                        Log.d(TAG, "Recive CALLME");
+                        message = JsonSerializer.deserialize(messageString, CallMe.class);
+                        connection.createOffer(new DefaultSdpObserver(connection, socket, message), new DefaultMediaConstraints());
+                        break;
+                    case OFFER:
+                        message = JsonSerializer.deserialize(messageString, SdpMessage.class);
+                        Log.d(TAG, "Recive OFFER");
+                        connection.setRemoteDescription(new DefaultSdpObserver(connection, socket, message).answerMode(true), ((SdpMessage) message).getSessionDescription());
+                        break;
+                    case ANSWER:
+                        Log.d(TAG, "Recive ANSWER");
+                        message = JsonSerializer.deserialize(messageString, SdpMessage.class);
+                        connection.setRemoteDescription(new DoNothingSdpObserver(), ((SdpMessage) message).getSessionDescription());
+                        break;
+                    case ICE_CANDIDATE:
+                        Log.d(TAG, "Recive ICE_CANDIDATE");
+                        message = JsonSerializer.deserialize(messageString, IceCandidateMessage.class);
+                        connection.addIceCandidate(((IceCandidateMessage)message).getIceCandidate());
+                        break;
                 }
             }
         });
-        socket.on(SocketMessageKey.SEND_ICE_CANDIDATE.toString(), new Emitter.Listener() {
-            @Override
-            public void call(Object... args) {
-                Log.d(this.getClass().getName(), "RECIEVE ICE_CANDIDATE");
-                if (args.length != 1) {
-                    throw new IllegalStateException();
-                }
-                IceCandidateMessage message = JsonSerializer.deserialize(args[0].toString(), IceCandidateMessage.class);
-                connection.addIceCandidate(message.getIceCandidate());
-            }
-        });
+        CallMe callMe = new CallMe();
+        callMe.setRoomId(roomId);
+        socket.emit(SocketMessageKey.MESSAGE.toString(), JsonSerializer.serialize(callMe));
+        callback.call();
     }
 
-    public void disConnect(){
-        if (connection != null) {
+    public void disconnect(Callback callback) {
+        for(Map.Entry<String, PeerConnection> e : socketIdToPeerConnection.entrySet()){
+            PeerConnection connection = e.getValue();
             connection.close();
         }
-        if(socket.connected()) {
+        socket.emit(SocketMessageKey.LEAVE.toString(), roomId);
+        if (socket.connected()) {
             socket.disconnect();
         }
+        callback.call();
     }
 
-    private SdpObserver build(PeerConnection connection){
-        return new DefaultSdpObserver(connection, socket);
+    private void connectIfDisconnected(String roomId) {
+        if (!socket.connected()) {
+            socket.connect();
+        }
+        socket.emit(SocketMessageKey.JOIN.toString(), roomId);
     }
 
-    public void update(PeerConnection connection){
-        this.connection = connection;
-        this.sdpObserver = build(connection);
+    private PeerConnection createPeerConnectionIfNotExists(List<PeerConnection.IceServer> iceServers, String from){
+        PeerConnection connection = socketIdToPeerConnection.get(from);
+        if(connection == null) {
+            connection = factory.createPeerConnection(iceServers, new MediaConstraints(), observer);
+            socketIdToPeerConnection.put(from, connection);
+            MediaStreamFactory streamFactory = new VideoAudioMediaStreamFactory(factory, null);
+            connection.addStream(streamFactory.create());
+        }
+        return connection;
     }
 
-    public void offer(){
-        MediaConstraints sdpMediaConstraints = new MediaConstraints();
-        sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
-                "OfferToReceiveAudio", "true"));
-        sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
-                "OfferToReceiveVideo", "true"));
-        connection.createOffer(sdpObserver, sdpMediaConstraints);
-    }
-
-    public void answer(){
-        MediaConstraints sdpMediaConstraints = new MediaConstraints();
-        sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
-                "OfferToReceiveAudio", "true"));
-        sdpMediaConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
-                "OfferToReceiveVideo", "true"));
-        connection.createAnswer(sdpObserver, sdpMediaConstraints);
+    public static interface Callback {
+        void call();
     }
 }

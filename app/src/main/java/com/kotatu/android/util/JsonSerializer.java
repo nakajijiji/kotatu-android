@@ -2,6 +2,7 @@ package com.kotatu.android.util;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
@@ -12,6 +13,10 @@ import java.io.IOException;
 
 public class JsonSerializer {
     private static ObjectMapper objectMapper = new ObjectMapper();
+
+    static {
+        objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    }
 
     public static String serialize(Object object){
         try {

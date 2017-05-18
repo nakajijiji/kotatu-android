@@ -1,8 +1,9 @@
-package com.kotatu.android.chat;
+package com.kotatu.android.chat.message;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
+import com.kotatu.android.chat.message.Message;
 
 import org.webrtc.IceCandidate;
 
@@ -12,6 +13,8 @@ import org.webrtc.IceCandidate;
 
 public class IceCandidateMessage extends Message {
     private SerializableIceCandidate iceCandidate;
+
+    public IceCandidateMessage(){this.type = Type.ICE_CANDIDATE;}
 
     @JsonGetter("iceCandidate")
     public SerializableIceCandidate getSerializableIceCandidate(){

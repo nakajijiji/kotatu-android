@@ -1,19 +1,18 @@
 package com.kotatu.android.chat;
 
-import android.media.AudioManager;
 import android.util.Log;
 
 import com.github.nkzawa.socketio.client.Socket;
+import com.kotatu.android.chat.message.IceCandidateMessage;
+import com.kotatu.android.chat.message.Message;
 import com.kotatu.android.util.JsonSerializer;
 
-import org.json.JSONObject;
 import org.webrtc.AudioTrack;
 import org.webrtc.DataChannel;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaStream;
 import org.webrtc.PeerConnection;
 import org.webrtc.VideoRenderer;
-import org.webrtc.VideoRendererGui;
 import org.webrtc.VideoTrack;
 
 import java.util.List;
@@ -23,10 +22,11 @@ import java.util.List;
  */
 
 public class DefaultObserver implements PeerConnection.Observer {
-    private final String TAG = "sample";
+    private static final String TAG = DefaultObserver.class.getCanonicalName();
 
     private Socket socket;
     private VideoRenderer renderer;
+    private MediaStream mediaStream;
 
     public DefaultObserver(Socket socket, VideoRenderer renderer) {
         this.socket = socket;
@@ -40,6 +40,9 @@ public class DefaultObserver implements PeerConnection.Observer {
 
     @Override
     public void onIceConnectionChange(PeerConnection.IceConnectionState iceConnectionState) {
+//        if(iceConnectionState == PeerConnection.IceConnectionState.DISCONNECTED){
+//            mediaStream.videoTracks.get(0).removeRenderer(renderer);
+//        }
         Log.d(TAG, "pcob1 onIceConnectionChange() " + iceConnectionState.name());
     }
 
@@ -54,17 +57,16 @@ public class DefaultObserver implements PeerConnection.Observer {
         IceCandidateMessage message = new IceCandidateMessage();
         message.setRoomId("1");
         message.setIceCandidate(iceCandidate);
-        socket.emit(SocketMessageKey.SEND_ICE_CANDIDATE.toString(), JsonSerializer.serialize(message));
+        socket.emit(SocketMessageKey.MESSAGE.toString(), JsonSerializer.serialize(message));
     }
 
     @Override
     public void onAddStream(MediaStream mediaStream) {
         List<VideoTrack> videoTracks = mediaStream.videoTracks;
-        videoTracks.get(0).addRenderer(renderer);
+       // videoTracks.get(0).addRenderer(renderer);
         List<AudioTrack> audioTracks = mediaStream.audioTracks;
-        AudioTrack track = audioTracks.get(0);
-        track.setEnabled(true);
-        Log.d(TAG, "on add stream");
+        Log.d(DefaultObserver.class.getName(), "videoTracks size:" + videoTracks.size());
+        Log.d(DefaultObserver.class.getName(), "audioTracks size:" + audioTracks.size());
     }
 
     @Override

@@ -1,10 +1,10 @@
 package com.kotatu.android.chat;
 
+import com.kotatu.android.chat.message.IceCandidateMessage;
 import com.kotatu.android.util.JsonSerializer;
 
 import org.junit.Test;
 import org.webrtc.IceCandidate;
-import org.webrtc.SessionDescription;
 
 import static org.junit.Assert.assertEquals;
 

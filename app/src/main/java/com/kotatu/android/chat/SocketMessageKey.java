@@ -5,5 +5,5 @@ package com.kotatu.android.chat;
  */
 
 public enum SocketMessageKey {
-    JOIN, SEND_SDP, SEND_ICE_CANDIDATE, LEAVE;
+    JOIN, MESSAGE, LEAVE;
 }

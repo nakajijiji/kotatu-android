@@ -1,5 +1,6 @@
 package com.kotatu.android.chat;
 
+import com.kotatu.android.chat.message.SdpMessage;
 import com.kotatu.android.util.JsonSerializer;
 
 import org.junit.Test;
