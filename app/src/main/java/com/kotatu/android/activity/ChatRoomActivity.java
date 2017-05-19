@@ -4,7 +4,10 @@ import android.app.Activity;
 import android.content.Intent;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.support.v4.view.GestureDetectorCompat;
 import android.support.v7.widget.Toolbar;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
@@ -34,40 +37,93 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 
-public class ChatRoomActivity extends Activity {
+public class ChatRoomActivity extends Activity implements
+        GestureDetector.OnGestureListener {
 
     private final String TAG = "sample";
     private final String STRN = "stun:stun.l.google.com:19302";
-    private final String SIGNALING = "http://ec2-52-198-242-194.ap-northeast-1.compute.amazonaws.com:3000";
-    private final String DUMMY_ROOM_ID = "1";
+    // X軸最低スワイプ距離
+    private static final int SWIPE_MIN_DISTANCE = 50;
+
+    // X軸最低スワイプスピード
+    private static final int SWIPE_THRESHOLD_VELOCITY = 200;
+
+    // Y軸の移動距離　これ以上なら横移動を判定しない
+    private static final int SWIPE_MAX_OFF_PATH = 250;
+
     private ExecutorService executor = Executors.newSingleThreadExecutor();
 
-    private Socket socket;
-    {
-        try {
-            socket = IO.socket(SIGNALING);
-        } catch (URISyntaxException e) {
-
-        }
-    }
     private PeerConnectionFactory factory;
     private String currentRoomId;
     private ConnectionManager connectionManager;
+    private GestureDetectorCompat mDetector;
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        this.mDetector.onTouchEvent(event);
+        // Be sure to call the superclass implementation
+        return super.onTouchEvent(event);
+    }
+
+
+    @Override
+    public boolean onDown(MotionEvent motionEvent) {
+        return false;
+    }
+
+    @Override
+    public void onShowPress(MotionEvent motionEvent) {
+
+    }
+
+    @Override
+    public boolean onSingleTapUp(MotionEvent motionEvent) {
+        return false;
+    }
+
+    @Override
+    public boolean onScroll(MotionEvent motionEvent, MotionEvent motionEvent1, float v, float v1) {
+        return false;
+    }
+
+    @Override
+    public void onLongPress(MotionEvent motionEvent) {
+
+    }
+
+    @Override
+    public boolean onFling(MotionEvent event1, MotionEvent event2, float velocityX, float velocityY) {
+        float distance_x = Math.abs((event1.getX() - event2.getX()));
+        float velocity_x = Math.abs(velocityX);
+
+        // Y軸の移動距離が大きすぎる場合
+        if (Math.abs(event1.getY() - event2.getY()) > SWIPE_MAX_OFF_PATH) {
+            //Do Nothing
+        } else if (event2.getX() - event1.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
+            finish();
+        } else if  (event1.getX() - event2.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
+            Intent intent = new Intent(ChatRoomActivity.this, VRChatActivity.class);
+            intent.putExtra(IntentKey.ROOM_ID, currentRoomId);
+            startActivity(intent);
+        }
+        return false;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        mDetector = new GestureDetectorCompat(this, this);
         Intent intent = getIntent();
         String roomString = intent.getStringExtra(IntentKey.ROOM);
         Room room = JsonSerializer.deserialize(roomString, Room.class);
         this.currentRoomId = room.getRoomId();
         setContentView(R.layout.chat_room);
-        Toolbar toolbar = (Toolbar)findViewById(R.id.toolbar);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         toolbar.setSubtitle(room.getName());
-        ListView view = (ListView)findViewById(R.id.member_list);
+        ListView view = (ListView) findViewById(R.id.member_list);
         view.setAdapter(new DefaultUserListAdapter(getApplicationContext(), room.getMembers()));
         initPeerConnectionFactory();
-        executor.submit(new Runnable(){
+        executor.submit(new Runnable() {
             @Override
             public void run() {
                 enter();
@@ -78,7 +134,7 @@ public class ChatRoomActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if(connectionManager == null){
+        if (connectionManager == null) {
             return;
         }
         connectionManager.disconnect(new ConnectionManager.Callback() {
@@ -89,13 +145,13 @@ public class ChatRoomActivity extends Activity {
         });
     }
 
-    private synchronized void enter(){
-        final ConnectionManager connectionManager = new ConnectionManager(factory, new DefaultObserver(socket), socket, currentRoomId);
+    private synchronized void enter() {
+        final ConnectionManager connectionManager = new ConnectionManager(factory, currentRoomId);
         this.connectionManager = connectionManager;
         connectionManager.connect(getIceServers(), new ConnectionManager.Callback() {
             @Override
             public void call() {
-                TextView view = (TextView)findViewById(R.id.connection_status);
+                TextView view = (TextView) findViewById(R.id.connection_status);
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
@@ -121,13 +177,13 @@ public class ChatRoomActivity extends Activity {
 //        connectionManager = null;
 //    }
 
-    private List<PeerConnection.IceServer> getIceServers(){
+    private List<PeerConnection.IceServer> getIceServers() {
         List<PeerConnection.IceServer> iceServers = new LinkedList<PeerConnection.IceServer>();
         iceServers.add(new PeerConnection.IceServer(STRN));
         return iceServers;
     }
 
-    private void initPeerConnectionFactory(){
+    private void initPeerConnectionFactory() {
         PeerConnectionFactory.initializeAndroidGlobals(getApplicationContext(), true, true, true, null);
         PeerConnectionFactory factory = new PeerConnectionFactory();
         this.factory = factory;

@@ -44,7 +44,7 @@ DefaultSdpObserver implements SdpObserver {
         connection.setLocalDescription(new DoNothingSdpObserver(), sessionDescription);
         SdpMessage message = new SdpMessage();
         // send back to the person who send sdp offer
-        message.setTo(message.getFrom());
+        message.setTo(recievedMessage.getFrom());
         message.setSessionDescription(sessionDescription);
         message.setRoomId(recievedMessage.getRoomId());
         Message.Type type = sendAnswer? Message.Type.ANSWER : Message.Type.OFFER;

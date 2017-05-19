@@ -6,4 +6,5 @@ package com.kotatu.android.intent;
 
 public class IntentKey {
     public static final String ROOM = "ROOM";
+    public static final String ROOM_ID = "ROOM_ID";
 }

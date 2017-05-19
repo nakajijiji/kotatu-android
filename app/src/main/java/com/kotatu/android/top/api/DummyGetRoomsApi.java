@@ -24,7 +24,7 @@ public class DummyGetRoomsApi implements GetRoomsApi {
         result.setMyRoom(Room.userRoom("huga", user));
         result.setLounges(lounges);
         lounges.add(Room.lounge("xxxx", "WoodPecker T.C", "http://circle", Arrays.asList(user, toshi, hiro)));
-        lounges.add(Room.lounge("xxxx", "Toast T.C", "http://circle", Arrays.asList(user, toshi, kazu)));
+        lounges.add(Room.lounge("xxyy", "Toast T.C", "http://circle", Arrays.asList(user, toshi, kazu)));
         result.setUserRooms(Arrays.asList(Room.userRoom("abcd", toshi), Room.userRoom("efgh", hiro), Room.userRoom("addgda", saki), Room.userRoom("ffdf", mayumi), Room.userRoom("gdfa", ikarosu), Room.userRoom("fdhh", mike), Room.userRoom("hjhjk", sakura)));
         listener.call(result);
         return result;

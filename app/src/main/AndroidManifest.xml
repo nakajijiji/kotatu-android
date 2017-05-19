@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.kotatu.android">
+
     <!--
 in this application camera is not necessary
     <uses-feature android:name="android.hardware.camera" />
@@ -34,11 +35,14 @@ in this application camera is not necessary
             android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".activity.ChatRoomActivity"
-            android:screenOrientation="portrait"></activity>
+        <activity
+            android:name=".activity.ChatRoomActivity"
+            android:screenOrientation="portrait" />
+        <activity android:name=".activity.VRChatActivity"></activity>
     </application>
 
 </manifest>

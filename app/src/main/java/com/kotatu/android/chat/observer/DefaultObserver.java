@@ -24,9 +24,11 @@ public class DefaultObserver implements PeerConnection.Observer {
     private static final String TAG = DefaultObserver.class.getCanonicalName();
 
     private Socket socket;
+    private String roomId;
     private MediaStream mediaStream;
 
-    public DefaultObserver(Socket socket) {
+    public DefaultObserver(Socket socket, String roomId) {
+        this.roomId = roomId;
         this.socket = socket;
     }
 
@@ -52,7 +54,7 @@ public class DefaultObserver implements PeerConnection.Observer {
     public void onIceCandidate(IceCandidate iceCandidate) {
         Log.d(TAG, "pcob1 onIceCandidate()");
         IceCandidateMessage message = new IceCandidateMessage();
-        message.setRoomId("1");
+        message.setRoomId(roomId);
         message.setIceCandidate(iceCandidate);
         socket.emit(SocketMessageKey.MESSAGE.toString(), JsonSerializer.serialize(message));
     }
