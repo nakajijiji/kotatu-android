@@ -8,4 +8,20 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
+    <style name="ToolbarTheme" parent="Theme.AppCompat.Light.NoActionBar">
+        <!-- Toolbar Title Color-->
+        <item name="android:textColorPrimary">@color/colorRoomTitle</item>
+        <item name="android:textColorSecondary">@color/colorRoomTitle</item>
+        <item name="android:background">@color/colorPrimary</item>
+    </style>
+
+    <!-- アニメーションの詳細設定 -->
+    <style name="Animation" parent="android:Animation" />
+    <style name="Animation.Activity" parent="android:Animation.Activity">
+        <item name="android:activityOpenEnterAnimation">@animator/slide_in_right</item>
+        <item name="android:activityOpenExitAnimation">@animator/slide_out_left</item>
+        <item name="android:activityCloseEnterAnimation">@animator/slide_in_left</item>
+        <item name="android:activityCloseExitAnimation">@animator/slide_out_right</item>
+    </style>
+
 </resources>

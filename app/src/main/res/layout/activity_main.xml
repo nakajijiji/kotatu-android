@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/activity_main"
     android:layout_width="match_parent"
@@ -8,21 +8,63 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="com.kotatu.android.activity.ChatActivity">
+    tools:context="com.kotatu.android.activity.MainActivity">
 
-    <Button
-        android:text="Enter Room"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
-        android:layout_marginStart="15dp"
-        android:layout_marginTop="24dp"
-        android:onClick="onClick"
-        android:id="@+id/button" />
+        android:orientation="vertical">
 
-    <android.opengl.GLSurfaceView android:id="@+id/surfaceviewclass"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@+id/button"/>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="HOME"></TextView>
 
-</RelativeLayout>
+        <com.kotatu.android.view.MaxHeightListView
+            android:id="@+id/home_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:dividerHeight="0dp"
+            android:divider="@null"/>
+
+        <View
+            android:layout_width="fill_parent"
+            android:layout_height="2dp"
+            android:background="@color/colorLight"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="LOUNGE"></TextView>
+
+        <com.kotatu.android.view.MaxHeightListView
+            android:id="@+id/lounge_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:dividerHeight="0dp"
+            android:divider="@null"/>
+
+        <View
+            android:layout_width="fill_parent"
+            android:layout_height="2dp"
+            android:background="@color/colorLight"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="FRIENDS"></TextView>
+
+        <com.kotatu.android.view.MaxHeightListView
+            android:id="@+id/friend_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:dividerHeight="0dp"
+            android:divider="@null"/>
+    </LinearLayout>
+</ScrollView>

@@ -1,17 +1,26 @@
 package com.kotatu.android.activity;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ListView;
+import android.widget.TextView;
 
 import com.github.nkzawa.socketio.client.IO;
 import com.github.nkzawa.socketio.client.Socket;
 import com.kotatu.android.R;
+import com.kotatu.android.chat.DefaultUserListAdapter;
 import com.kotatu.android.chat.observer.DefaultObserver;
 import com.kotatu.android.chat.ConnectionManager;
+import com.kotatu.android.entity.Room;
+import com.kotatu.android.intent.IntentKey;
+import com.kotatu.android.util.JsonSerializer;
 
+import org.w3c.dom.Text;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.VideoRenderer;
@@ -20,14 +29,18 @@ import org.webrtc.VideoRendererGui;
 import java.net.URISyntaxException;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 
-public class ChatActivity extends Activity {
+public class ChatRoomActivity extends Activity {
 
     private final String TAG = "sample";
     private final String STRN = "stun:stun.l.google.com:19302";
     private final String SIGNALING = "http://ec2-52-198-242-194.ap-northeast-1.compute.amazonaws.com:3000";
     private final String DUMMY_ROOM_ID = "1";
+    private ExecutorService executor = Executors.newSingleThreadExecutor();
 
     private Socket socket;
     {
@@ -40,24 +53,26 @@ public class ChatActivity extends Activity {
     private PeerConnectionFactory factory;
     private String currentRoomId;
     private ConnectionManager connectionManager;
-    private VideoRenderer renderer;
-
-    public void onClick(View view) {
-        if(connectionManager == null) {
-            enter();
-        }else{
-            leave();
-        }
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        this.currentRoomId = DUMMY_ROOM_ID;
-        setContentView(R.layout.activity_main);
+        Intent intent = getIntent();
+        String roomString = intent.getStringExtra(IntentKey.ROOM);
+        Room room = JsonSerializer.deserialize(roomString, Room.class);
+        this.currentRoomId = room.getRoomId();
+        setContentView(R.layout.chat_room);
+        Toolbar toolbar = (Toolbar)findViewById(R.id.toolbar);
+        toolbar.setSubtitle(room.getName());
+        ListView view = (ListView)findViewById(R.id.member_list);
+        view.setAdapter(new DefaultUserListAdapter(getApplicationContext(), room.getMembers()));
         initPeerConnectionFactory();
-        this.renderer = createVideoRenderer();
-        final PeerConnection.Observer observer = new DefaultObserver(socket);
+        executor.submit(new Runnable(){
+            @Override
+            public void run() {
+                enter();
+            }
+        });
     }
 
     @Override
@@ -77,28 +92,34 @@ public class ChatActivity extends Activity {
     private synchronized void enter(){
         final ConnectionManager connectionManager = new ConnectionManager(factory, new DefaultObserver(socket), socket, currentRoomId);
         this.connectionManager = connectionManager;
-        final Button button = (Button) findViewById(R.id.button);
         connectionManager.connect(getIceServers(), new ConnectionManager.Callback() {
             @Override
             public void call() {
-                button.setText("Leave");
+                TextView view = (TextView)findViewById(R.id.connection_status);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    //Do Nothing
+                }
+                view.setText(R.string.connected);
+                //button.setText("Leave");
             }
         });
     }
 
-    private synchronized void leave(){
-        if(connectionManager == null){
-            return;
-        }
-        final Button button = (Button) findViewById(R.id.button);
-        connectionManager.disconnect(new ConnectionManager.Callback() {
-            @Override
-            public void call() {
-                button.setText("Enter Room");
-            }
-        });
-        connectionManager = null;
-    }
+//    private synchronized void leave(){
+//        if(connectionManager == null){
+//            return;
+//        }
+//        final Button button = (Button) findViewById(R.id.button);
+//        connectionManager.disconnect(new ConnectionManager.Callback() {
+//            @Override
+//            public void call() {
+//                button.setText("Enter Lounge");
+//            }
+//        });
+//        connectionManager = null;
+//    }
 
     private List<PeerConnection.IceServer> getIceServers(){
         List<PeerConnection.IceServer> iceServers = new LinkedList<PeerConnection.IceServer>();
@@ -111,20 +132,4 @@ public class ChatActivity extends Activity {
         PeerConnectionFactory factory = new PeerConnectionFactory();
         this.factory = factory;
     }
-
-    private VideoRenderer createVideoRenderer(){
-        GLSurfaceView videoView = (GLSurfaceView) findViewById(R.id.surfaceviewclass);
-        VideoRendererGui.setView(videoView, new Runnable() {
-            @Override
-            public void run() {
-                // Do Nothing
-            }
-        });
-        try {
-            return VideoRendererGui.createGui(0, 0, 100, 100, VideoRendererGui.ScalingType.SCALE_ASPECT_FILL, false);
-        } catch (Exception e) {
-            throw new IllegalStateException(e);
-        }
-    }
-
 }
