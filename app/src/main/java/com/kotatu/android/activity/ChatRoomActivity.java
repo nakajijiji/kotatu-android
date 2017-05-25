@@ -2,6 +2,11 @@ package com.kotatu.android.activity;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.media.AudioFormat;
+import android.media.AudioManager;
+import android.media.AudioRecord;
+import android.media.AudioTrack;
+import android.media.MediaRecorder;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.support.v4.view.GestureDetectorCompat;
@@ -16,6 +21,7 @@ import android.widget.TextView;
 import com.github.nkzawa.socketio.client.IO;
 import com.github.nkzawa.socketio.client.Socket;
 import com.kotatu.android.R;
+import com.kotatu.android.chat.AudioRecordThread;
 import com.kotatu.android.chat.DefaultUserListAdapter;
 import com.kotatu.android.chat.observer.DefaultObserver;
 import com.kotatu.android.chat.ConnectionManager;
@@ -30,11 +36,16 @@ import org.webrtc.VideoRenderer;
 import org.webrtc.VideoRendererGui;
 
 import java.net.URISyntaxException;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.nio.ShortBuffer;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 
 public class ChatRoomActivity extends Activity implements
@@ -101,7 +112,7 @@ public class ChatRoomActivity extends Activity implements
             //Do Nothing
         } else if (event2.getX() - event1.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
             finish();
-        } else if  (event1.getX() - event2.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
+        } else if (event1.getX() - event2.getX() > SWIPE_MIN_DISTANCE && Math.abs(velocityX) > SWIPE_THRESHOLD_VELOCITY) {
             Intent intent = new Intent(ChatRoomActivity.this, VRChatActivity.class);
             intent.putExtra(IntentKey.ROOM_ID, currentRoomId);
             startActivity(intent);
@@ -123,12 +134,7 @@ public class ChatRoomActivity extends Activity implements
         ListView view = (ListView) findViewById(R.id.member_list);
         view.setAdapter(new DefaultUserListAdapter(getApplicationContext(), room.getMembers()));
         initPeerConnectionFactory();
-        executor.submit(new Runnable() {
-            @Override
-            public void run() {
-                enter();
-            }
-        });
+        enter();
     }
 
     @Override
@@ -140,7 +146,7 @@ public class ChatRoomActivity extends Activity implements
         connectionManager.disconnect(new ConnectionManager.Callback() {
             @Override
             public void call() {
-
+                executor.shutdown();
             }
         });
     }
@@ -152,15 +158,20 @@ public class ChatRoomActivity extends Activity implements
             @Override
             public void call() {
                 TextView view = (TextView) findViewById(R.id.connection_status);
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    //Do Nothing
-                }
                 view.setText(R.string.connected);
                 //button.setText("Leave");
             }
         });
+        executor.submit(new AudioRecordThread(new AudioRecordThread.Callback() {
+            @Override
+            public void call(ShortBuffer buffer) {
+                ByteBuffer bb = ByteBuffer.allocateDirect(buffer.array().length * 2);
+                for (short s : buffer.array()) {
+                    bb.putShort(s);
+                }
+                connectionManager.broadcast(bb);
+            }
+        }));
     }
 
 //    private synchronized void leave(){

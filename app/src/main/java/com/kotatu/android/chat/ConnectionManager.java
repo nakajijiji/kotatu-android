@@ -16,11 +16,13 @@ import com.kotatu.android.chat.observer.DefaultSdpObserver;
 import com.kotatu.android.chat.observer.DoNothingSdpObserver;
 import com.kotatu.android.util.JsonSerializer;
 
+import org.webrtc.DataChannel;
 import org.webrtc.MediaConstraints;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
 
 import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +38,8 @@ public class ConnectionManager {
     private String roomId;
     private PeerConnectionFactory factory;
     private Map<String, PeerConnection> socketIdToPeerConnection = new HashMap<>();
+    private Map<String, DataChannel> socketIdToDataChannel = new HashMap<>();
+
     private PeerConnection.Observer observer;
     {
         try {
@@ -68,6 +72,15 @@ public class ConnectionManager {
             socket.disconnect();
         }
         callback.call();
+    }
+
+    public void broadcast(ByteBuffer message){
+        for(Map.Entry<String, DataChannel> e : socketIdToDataChannel.entrySet()){
+            message.position(0);
+            DataChannel channel = e.getValue();
+            DataChannel.Buffer buffer = new DataChannel.Buffer(message, true);
+            channel.send(buffer);
+        }
     }
 
     private void connectIfDisconnected(final String roomId, final List<PeerConnection.IceServer> iceServers) {
@@ -118,10 +131,20 @@ public class ConnectionManager {
         PeerConnection connection = socketIdToPeerConnection.get(from);
         if(connection == null) {
             PeerConnection.Observer observer = new DefaultObserver(socket, roomId);
-            connection = factory.createPeerConnection(iceServers, new MediaConstraints(), observer);
+            MediaConstraints constraints = new MediaConstraints();
+            constraints.optional.add(new MediaConstraints.KeyValuePair("RtpDataChannels", "false"));
+            connection = factory.createPeerConnection(iceServers, constraints, observer);
             socketIdToPeerConnection.put(from, connection);
-            MediaStreamFactory streamFactory = new AudioMediaStreamFactory(factory);
-            connection.addStream(streamFactory.create());
+           // MediaStreamFactory streamFactory = new AudioMediaStreamFactory(factory);
+            //connection.addStream(streamFactory.create());
+
+            // datachannelの設定
+            DataChannel.Init channelOptions = new DataChannel.Init();
+            channelOptions.ordered = false;
+            channelOptions.maxRetransmits = 0;
+            DataChannel dataChannel = connection.createDataChannel("dummy", channelOptions);
+            dataChannel.registerObserver(new DefaultDataChannelObserver(dataChannel));
+            socketIdToDataChannel.put(from, dataChannel);
         }
         return connection;
     }
