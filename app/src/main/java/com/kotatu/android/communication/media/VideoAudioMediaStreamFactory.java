@@ -21,14 +21,14 @@ public class VideoAudioMediaStreamFactory extends MediaStreamFactory {
 
     @Override
     public MediaStream create() {
-        VideoCapturer capturer = VideoCapturer.create(VideoCapturerAndroid.getNameOfFrontFacingDevice());
-        VideoSource videoSource = factory.createVideoSource(capturer, defaultVideoConstraints());
-        VideoTrack localVideoTrack = factory.createVideoTrack("dummy_video", videoSource);
-        AudioSource audioSource = factory.createAudioSource(defaultAudioConstraints());
-        AudioTrack localAudioTrack = factory.createAudioTrack("dummy_audio", audioSource);
+//        VideoCapturer capturer = VideoCapturer.create(VideoCapturerAndroid.getNameOfFrontFacingDevice());
+//        VideoSource videoSource = factory.createVideoSource(capturer, defaultVideoConstraints());
+//        VideoTrack localVideoTrack = factory.createVideoTrack("dummy_video", videoSource);
+//        AudioSource audioSource = factory.createAudioSource(defaultAudioConstraints());
+//        AudioTrack localAudioTrack = factory.createAudioTrack("dummy_audio", audioSource);
         MediaStream mediaStream = factory.createLocalMediaStream("dummy_stream");
-        mediaStream.addTrack(localVideoTrack);
-        mediaStream.addTrack(localAudioTrack);
+//        mediaStream.addTrack(localVideoTrack);
+//        mediaStream.addTrack(localAudioTrack);
         return mediaStream;
     }
 

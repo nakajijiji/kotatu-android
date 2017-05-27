@@ -1,6 +1,8 @@
 package com.kotatu.android.communication;
 
 import android.content.Context;
+import android.media.AudioManager;
+import android.media.AudioTrack;
 import android.util.Log;
 
 import com.kotatu.android.communication.observer.DefaultDataChannelObserver;
@@ -9,6 +11,7 @@ import com.kotatu.android.communication.observer.PlayAudio;
 import org.webrtc.DataChannel;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
+import org.webrtc.voiceengine.WebRtcAudioUtils;
 
 import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
@@ -31,12 +34,15 @@ public class DefaultCommunicationManager implements CommunicationManager {
     private WebRTCConnectionManager manager;
     private String roomId;
     private AudioRecordTask recordTask;
+    private DefaultDataChannelObserver.OnMessageCallback callback;
     private PeerConnectionFactory factory;
+    private AudioManager audioManager;
 
     @Override
     public void init(Context context){
-        PeerConnectionFactory.initializeAndroidGlobals(context, true, true, true, null);
+        PeerConnectionFactory.initializeAndroidGlobals(context, true, true, true);
         PeerConnectionFactory factory = new PeerConnectionFactory();
+        this.audioManager = (AudioManager)context.getSystemService(Context.AUDIO_SERVICE);
         this.factory = factory;
         this.executor = Executors.newSingleThreadExecutor();
     }
@@ -44,19 +50,17 @@ public class DefaultCommunicationManager implements CommunicationManager {
     @Override
     public void setMicrophone(boolean on) {
         if(recordTask == null && on) {
+            audioManager.setSpeakerphoneOn(true);
             AudioRecordTask recordTask = new AudioRecordTask(new AudioRecordTask.Callback() {
                 @Override
-                public void call(ShortBuffer buffer) {
-                    ByteBuffer bb = ByteBuffer.allocateDirect(buffer.array().length * 2);
-                    for (short s : buffer.array()) {
-                        bb.putShort(s);
-                    }
-                    manager.broadcast(bb);
+                public void call(ByteBuffer buffer) {
+                    manager.broadcast(buffer);
                 }
             });
             executor.submit(recordTask);
             this.recordTask = recordTask;
         }else if(!on){
+            audioManager.setSpeakerphoneOn(false);
             if(recordTask != null){
                 recordTask.setAudioRecordEnabled(false);
                 this.recordTask = null;
@@ -68,7 +72,9 @@ public class DefaultCommunicationManager implements CommunicationManager {
     public void connect(String roomId, String signalingServerAddress, String[] iceServerAddresses) {
         Log.d(TAG, "connecting to:" + roomId);
         this.roomId = roomId;
-        WebRTCConnectionManager manager = new WebRTCConnectionManager(factory, roomId, buildOnMessageCallback());
+        DefaultDataChannelObserver.OnMessageCallback callback = buildOnMessageCallback();
+        this.callback = callback;
+        WebRTCConnectionManager manager = new WebRTCConnectionManager(factory, roomId, callback);
         manager.connect(signalingServerAddress, getIceServers(iceServerAddresses));
         this.manager = manager;
         setMicrophone(true);
@@ -76,11 +82,16 @@ public class DefaultCommunicationManager implements CommunicationManager {
 
     @Override
     public void disconnect(String roomId) {
+        org.webrtc.AudioTrack track;
         setMicrophone(false);
+        manager.disconnect();
         this.manager = null;
         this.roomId = null;
         if(executor != null){
             executor.shutdown();
+        }
+        if(callback != null){
+            callback.destroy();
         }
     }
 

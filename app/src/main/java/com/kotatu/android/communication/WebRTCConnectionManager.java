@@ -76,7 +76,9 @@ public class WebRTCConnectionManager {
     private void connectIfDisconnected(final String roomId, String signalingServerAddress, final List<PeerConnection.IceServer> iceServers) {
         if (socket == null){
             try {
-                socket = IO.socket(signalingServerAddress);
+                IO.Options options = new IO.Options();
+                options.forceNew = true;
+                socket = IO.socket(signalingServerAddress, options);
             } catch (URISyntaxException e) {
 
             }
@@ -131,12 +133,14 @@ public class WebRTCConnectionManager {
                 @Override
                 public void onDataChannel(DataChannel dataChannel){
                     dataChannel.registerObserver(new DefaultDataChannelObserver(from, dataChannel, callback));
-                    socketIdToDataChannel.put(from, dataChannel);
+                    socketIdToDataChannel.put(from+"remote", dataChannel);
                 }
             };
             MediaConstraints constraints = new MediaConstraints();
             constraints.optional.add(new MediaConstraints.KeyValuePair("RtpDataChannels", "false"));
             connection = factory.createPeerConnection(iceServers, constraints, observer);
+            Log.d(TAG + "iceee", connection.iceConnectionState().toString());
+
             socketIdToPeerConnection.put(from, connection);
            // MediaStreamFactory streamFactory = new AudioMediaStreamFactory(factory);
             //connection.addStream(streamFactory.create());
@@ -145,12 +149,10 @@ public class WebRTCConnectionManager {
             DataChannel.Init channelOptions = new DataChannel.Init();
             channelOptions.ordered = false;
             channelOptions.maxRetransmits = 0;
-            if(!socketIdToDataChannel.containsKey(from)) {
-                DataChannel dataChannel = connection.createDataChannel("dummy", channelOptions);
-                DefaultDataChannelObserver dataChannelObserver = new DefaultDataChannelObserver(from, dataChannel, callback);
-                dataChannel.registerObserver(dataChannelObserver);
-                socketIdToDataChannel.put(from, dataChannel);
-            }
+            DataChannel dataChannel = connection.createDataChannel(from, channelOptions);
+            //DefaultDataChannelObserver dataChannelObserver = new DefaultDataChannelObserver(from, dataChannel, callback);
+            //dataChannel.registerObserver(dataChannelObserver);
+            socketIdToDataChannel.put(from+"local", dataChannel);
         }
         return connection;
     }

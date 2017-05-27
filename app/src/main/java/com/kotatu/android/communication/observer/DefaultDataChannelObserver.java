@@ -39,6 +39,11 @@ public class DefaultDataChannelObserver implements DataChannel.Observer{
         callback.call(socketId, buffer);
     }
 
+    @Override
+    public void onBufferedAmountChange(long l) {
+
+    }
+
     public static interface OnMessageCallback {
         void call(String socketId, DataChannel.Buffer buffer);
 

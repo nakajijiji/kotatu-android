@@ -3,8 +3,10 @@ package com.kotatu.android.communication;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+import android.os.Process;
 import android.util.Log;
 
+import java.nio.ByteBuffer;
 import java.nio.ShortBuffer;
 
 /**
@@ -30,25 +32,24 @@ public class AudioRecordTask implements Runnable {
 
     @Override
     public void run() {
-        int bufferLength = 512;
-        int bufferSize;
+        Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
+        int bufferLength = 960;
         short[] audioData;
         int bufferReadResult;
         int sampleAudioBitRate = 44100;
         try {
-            bufferSize = AudioRecord.getMinBufferSize(sampleAudioBitRate,
-                    AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT);
+//            bufferSize = AudioRecord.getMinBufferSize(sampleAudioBitRate,
+//                    AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT);
             AudioRecord audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, sampleAudioBitRate,
                     AudioFormat.CHANNEL_CONFIGURATION_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferLength);
             audioData = new short[bufferLength];
             audioRecord.startRecording();
             Log.d(LOG_TAG, "audioRecord.startRecording()");
             audioRecordEnabled = true;
-                /* ffmpeg_audio encoding loop */
+            ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bufferLength);
             while (audioRecordEnabled) {
-                bufferReadResult = audioRecord.read(audioData, 0, audioData.length);
-                ShortBuffer realAudioData = ShortBuffer.wrap(audioData,0,bufferReadResult);
-                callback.call(realAudioData);
+                bufferReadResult = audioRecord.read(byteBuffer, byteBuffer.capacity());
+                callback.call(byteBuffer);
             }
 
                 /* encoding finish, release recorder */
@@ -69,6 +70,6 @@ public class AudioRecordTask implements Runnable {
     }
 
     public static interface Callback{
-        void call(ShortBuffer buffer);
+        void call(ByteBuffer buffer);
     }
 }

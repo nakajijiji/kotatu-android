@@ -5,7 +5,7 @@ android {
     buildToolsVersion "25.0.1"
     defaultConfig {
         applicationId "com.kotatu.android"
-        minSdkVersion 21
+        minSdkVersion 23
         targetSdkVersion 24
         versionCode 1
         versionName "1.0"
@@ -28,7 +28,7 @@ dependencies {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
     compile 'com.android.support:appcompat-v7:24.2.1'
-    compile 'io.pristine:libjingle:9127@aar'
+    compile 'io.pristine:libjingle:9944@aar'
     compile 'com.github.nkzawa:socket.io-client:0.3.0'
     compile 'com.fasterxml.jackson.core:jackson-core:2.4.4@jar'
     compile 'com.fasterxml.jackson.core:jackson-annotations:2.4.4@jar'

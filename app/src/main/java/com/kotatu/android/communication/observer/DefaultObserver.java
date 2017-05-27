@@ -82,4 +82,9 @@ public class DefaultObserver implements PeerConnection.Observer {
     public void onRenegotiationNeeded() {
         Log.d(TAG, "pcob1 onRenegotiationNeeded()");
     }
+
+    @Override
+    public void onIceConnectionReceivingChange(boolean b) {
+
+    }
 }
